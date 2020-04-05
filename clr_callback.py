@@ -1,6 +1,6 @@
-from keras.callbacks import *
+# from keras.callbacks import *
 
-class CyclicLR(Callback):
+class CyclicLR(tf.keras.callbacks.Callback):
     """This callback implements a cyclical learning rate policy (CLR).
     The method cycles the learning rate between two boundaries with
     some constant frequency, as detailed in this paper (https://arxiv.org/abs/1506.01186).
