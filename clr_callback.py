@@ -131,3 +131,37 @@ class CyclicLR(tf.keras.callbacks.Callback):
             self.history.setdefault(k, []).append(v)
         
         tf.keras.backend.set_value(self.model.optimizer.lr, self.clr())
+
+class ScheduledLR(tf.keras.callbacks.Callback):
+    """Learning rate scheduler which sets the learning rate according to schedule.
+
+    Arguments:
+        schedule: tuples (epoch to start, learning rate) e.g.:
+            (3, 0.05), (6, 0.01), (9, 0.005), (12, 0.001)
+    """
+
+    def __init__(self, schedule):
+        super(ScheduledLR, self).__init__()
+        self.schedule = schedule
+
+    def lr_schedule(self, epoch, lr):
+        """Helper function to retrieve the scheduled learning rate based on epoch."""
+        if epoch < self.schedule[0][0] or epoch > self.schedule[-1][0]:
+            return lr
+        for i in range(len(self.schedule)):
+            if epoch == self.schedule[i][0]:
+                return self.schedule[i][1]
+        return lr
+
+    def on_train_begin(self, logs={}):
+        if not hasattr(self.model.optimizer, 'lr'):
+            raise ValueError('Optimizer must have a "lr" attribute.')
+
+    def on_epoch_begin(self, epoch, logs=None):
+        # Get the current learning rate from model's optimizer.
+        lr = float(tf.keras.backend.get_value(self.model.optimizer.lr))
+        # Call schedule function to get the scheduled learning rate.
+        scheduled_lr = self.lr_schedule(epoch, lr)
+        # Set the value back to the optimizer before this epoch starts
+        tf.keras.backend.set_value(self.model.optimizer.lr, scheduled_lr)
+        print('\nEpoch %05d: Learning rate is %6.4f.' % (epoch, scheduled_lr))
